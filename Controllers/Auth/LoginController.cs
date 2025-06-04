@@ -8,6 +8,7 @@ using System.Text;
 using imapsbackend.Data;
 using imapsbackend.DTOs;
 using imapsbackend.Models;
+using imapsbackend.Helpers; 
 
 namespace imapsbackend.Controllers;
 
@@ -58,7 +59,7 @@ public class LoginController : ControllerBase
             });
         }
 
-        var token = GenerateJwtToken(user);
+        var token = JwtHelper.GenerateJwtToken(user, _configuration);
 
         return Ok(new LoginResponse
         {
@@ -66,27 +67,5 @@ public class LoginController : ControllerBase
             RD = "Login successful.",
             Data = new { Token = token }
         });
-    }
-
-    private string GenerateJwtToken(User user)
-    {
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);
-
-        var tokenDescriptor = new SecurityTokenDescriptor
-        {
-            Subject = new ClaimsIdentity(new[]
-            {
-                new Claim("UserId", user.Id.ToString()),
-                new Claim("Email", user.Email)
-            }),
-            Expires = DateTime.UtcNow.AddHours(1),
-            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
-            Issuer = _configuration["Jwt:Issuer"],
-            Audience = _configuration["Jwt:Audience"]
-        };
-
-        var token = tokenHandler.CreateToken(tokenDescriptor);
-        return tokenHandler.WriteToken(token);
     }
 }
